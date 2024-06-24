@@ -24,11 +24,46 @@ screen.fill(backgroundColor)
 class Board:
     def __init__(self):
         self.squares = np.zeros((R,C))
+        self.empty_sqrs = self.squares
+        self.marked_sqrs = 0
+    
+    def final(self):
+        #vertical
+        for col in range(C):
+            if self.squares[0][col] == self.squares[1][col] == self.squares[2][col] != 0:
+                return self.squares[0][col]
+        #horizontal
+        for row in range(R):
+            if self.squares[row][0] == self.squares[row][1] == self.squares[row][2] != 0:
+                return self.squares[row][0] 
+        #diagonal down
+        if self.squares[0][0] == self.squares[1][1] == self.squares[2][2] != 0:
+            return self.squares[0][0]
+        #diagonal up
+        if self.squares[2][0] == self.squares[1][1] == self.squares[0][2] != 0:
+            return self.squares[2][0]
+        return 0
         
     def mark(self,row,col,player):
         self.squares[row][col] = player
+        self.marked_sqrs += 1
+        
     def empty(self, row,col):
         return self.squares[row][col] == 0
+    
+    def isfull(self):
+        return self.marked_sqrs == 9
+    
+    def isempty(self):
+        return self.marked_sqrs == 0
+    
+    def getEmptySquares(self):
+        empty_sqrs = []
+        for row in range(R):
+            for col in range(C):
+                if self.empty(row,col):
+                    empty_sqrs.append((row,col))
+        return empty_sqrs
         
 class Back:
     
