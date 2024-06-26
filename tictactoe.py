@@ -1,6 +1,7 @@
 import sys
 import pygame
 import numpy as np
+import random
 
 #Constants
 
@@ -64,12 +65,45 @@ class Board:
                 if self.empty(row,col):
                     empty_sqrs.append((row,col))
         return empty_sqrs
+ 
+#Level 0 = random ai, level 1 = minmax ai
+class AI:
+    def __init__(self, level=1, player=2) -> None:
+        self.level = level
+        self.player = player 
         
+    def rnd(self, board):
+        empty_sqr = board.getEmptySquares()
+        idx = random.randrange(0, len(empty_sqr))
+        return empty_sqr[idx]
+    
+    def minimax(self, board, maximizing:bool):
+        case = board.final()
+        
+        #player 1 wins
+        if case == 1:
+            return case
+        #player 2 wins
+        if case == 2:
+            return -1
+        #draw
+        elif board.isfull():
+            return 0
+        
+    def eval(self, mainboard):
+        if self.level == 0:
+            move = self.rnd(mainboard)
+        else:
+            self.minimax(mainboard, False)
+        return move
 class Back:
     
     def __init__(self) -> None:
         self.board = Board()
+        self.ai = AI()
         self.player = 1
+        self.gamemode = gameMode
+        self.running = True
         self.lines()
     
     def lines(self):
@@ -95,10 +129,13 @@ class Back:
             pygame.draw.circle(screen,circColor,center,radius,circWidth)
     
 
+gameMode = str(input("Select gamemode: \n 1: AI \n 2: PvP\n")).lower()
+
 def main():
     
     game = Back()
     gboard = game.board
+    gai = game.ai
     
     while 1:
         for event in pygame.event.get():
@@ -115,6 +152,16 @@ def main():
                     game.draw_fig(row,col)
                     game.changeplayer()
                 print(gboard.squares)
+        if game.gamemode == 'ai' and game.player == gai.player:
+            pygame.display.update()
+            
+            row, col = gai.eval(gboard)
+            if gboard.empty(row,col):
+                gboard.mark(row,col, gai.player)
+                game.draw_fig(row,col)
+                game.changeplayer()
+            
+            
         pygame.display.update()
 main()
         
