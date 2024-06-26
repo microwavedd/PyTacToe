@@ -22,27 +22,46 @@ offset = 50
 pygame.init()
 screen = pygame.display.set_mode( (W,H) )
 pygame.display.set_caption("PyTacToe")
-screen.fill(backgroundColor)
 class Board:
     def __init__(self):
         self.squares = np.zeros((R,C))
         self.empty_sqrs = self.squares
         self.marked_sqrs = 0
     
-    def final(self):
+    def final(self, show=False):
         #vertical
         for col in range(C):
             if self.squares[0][col] == self.squares[1][col] == self.squares[2][col] != 0:
+                if show:
+                    color = circColor if self.squares[0][col] == 2 else crossColor
+                    iPos = (col * sizeSquare + sizeSquare // 2, 20)
+                    fPos = (col * sizeSquare + sizeSquare // 2, H - 20)
+                    pygame.draw.line(screen, color, iPos, fPos, lineWidth)
                 return self.squares[0][col]
         #horizontal
         for row in range(R):
             if self.squares[row][0] == self.squares[row][1] == self.squares[row][2] != 0:
+                if show:
+                    color = circColor if self.squares[row][0] == 2 else crossColor
+                    iPos = (20, row * sizeSquare + sizeSquare // 2)
+                    fPos = (W - 20, row * sizeSquare + sizeSquare // 2)
+                    pygame.draw.line(screen, color, iPos, fPos, lineWidth)
                 return self.squares[row][0] 
         #diagonal down
         if self.squares[0][0] == self.squares[1][1] == self.squares[2][2] != 0:
+            if show:
+                color = circColor if self.squares[0][0] == 2 else crossColor
+                iPos = (20, 20)
+                fPos = (W -20, H - 20)
+                pygame.draw.line(screen, color, iPos, fPos, lineWidth)
             return self.squares[0][0]
         #diagonal up
         if self.squares[2][0] == self.squares[1][1] == self.squares[0][2] != 0:
+            if show:
+                color = circColor if self.squares[0][0] == 2 else crossColor
+                iPos = (20, H - 20)
+                fPos = (W - 20, 20)
+                pygame.draw.line(screen, color, iPos, fPos, lineWidth)
             return self.squares[2][0]
         return 0
         
@@ -123,9 +142,12 @@ class AI:
         
     def eval(self, mainboard):
         if self.level == 0:
+            eval = 'random'
             move = self.rnd(mainboard)
         else:
-            self.minimax(mainboard, False)
+            eval, move = self.minimax(mainboard, False)
+            
+        print(f"La IA ha elegido marcar la casilla {move}, con una evaluación de {eval}", sep="")
         return move
 class Back:
     
@@ -133,11 +155,12 @@ class Back:
         self.board = Board()
         self.ai = AI()
         self.player = 1
-        self.gamemode = gameMode
+        self.gamemode = 'ai'
         self.running = True
         self.lines()
     
     def lines(self):
+        screen.fill(backgroundColor)
         #vertical
         pygame.draw.line(screen, lineColor, (sizeSquare,0), (sizeSquare, H), lineWidth)
         pygame.draw.line(screen, lineColor, (W*(2/3),0), (W*(2/3), H), lineWidth)
@@ -158,9 +181,17 @@ class Back:
         elif self.player == 2:
             center = (col * sizeSquare + sizeSquare // 2, row * sizeSquare + sizeSquare // 2)
             pygame.draw.circle(screen,circColor,center,radius,circWidth)
+    def changeGamemode(self):
+        self.gamemode = 'ai' if self.gamemode == 'pvp' else 'pvp'
     
-
-gameMode = str(input("Select gamemode: \n 1: AI \n 2: PvP\n")).lower()
+    def reset(self):
+        self.__init__()
+        
+    def isover(self):
+        return self.board.final(show=True) != 0 or self.board.isfull()
+    
+    
+    
 
 def main():
     
@@ -178,12 +209,33 @@ def main():
                 pos = event.pos
                 row = pos[1] // sizeSquare
                 col = pos[0] // sizeSquare
-                if gboard.empty(row,col):
+                if gboard.empty(row,col) and game.running:
                     gboard.mark(row,col, game.player)
                     game.draw_fig(row,col)
                     game.changeplayer()
+                    
+                    if game.isover():
+                        game.running = False
                 print(gboard.squares)
-        if game.gamemode == 'ai' and game.player == gai.player:
+                
+            if event.type == pygame.KEYDOWN:
+                
+                if event.key == pygame.K_g:
+                    game.changeGamemode()
+                    
+                if event.key == pygame.K_0:
+                    gai.level = 0
+                    
+                if event.key == pygame.K_1:
+                    gai.level = 1
+                    
+                if event.key == pygame.K_r:
+                    game.reset()
+                    gboard = game.board
+                    gai = game.ai
+                
+                
+        if game.gamemode == 'ai' and game.player == gai.player and game.running:
             pygame.display.update()
             
             row, col = gai.eval(gboard)
@@ -191,6 +243,8 @@ def main():
                 gboard.mark(row,col, gai.player)
                 game.draw_fig(row,col)
                 game.changeplayer()
+                if game.isover():
+                        game.running = False
             
             
         pygame.display.update()
