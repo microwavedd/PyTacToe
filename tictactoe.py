@@ -1,7 +1,8 @@
 import sys
+import random
+import copy
 import pygame
 import numpy as np
-import random
 
 #Constants
 
@@ -82,13 +83,43 @@ class AI:
         
         #player 1 wins
         if case == 1:
-            return case
+            return case, None
         #player 2 wins
         if case == 2:
-            return -1
+            return -1, None
         #draw
         elif board.isfull():
-            return 0
+            return 0, None
+        
+        if maximizing:
+            max_eval = -2
+            best_move = None
+            empty_sqrs = board.getEmptySquares()
+            
+            for (row, col) in empty_sqrs:
+                temp = copy.deepcopy(board)
+                temp.mark(row,col, 1)
+                eval = self.minimax(temp, False)[0]
+                if eval > max_eval:
+                    max_eval = eval
+                    best_move = (row, col)
+            return max_eval, best_move
+                    
+        
+        elif not maximizing:
+            min_eval = 2
+            best_move = None
+            empty_sqrs = board.getEmptySquares()
+            
+            for (row, col) in empty_sqrs:
+                temp = copy.deepcopy(board)
+                temp.mark(row,col, self.player)
+                eval = self.minimax(temp, True)[0]
+                if eval < min_eval:
+                    min_eval = eval
+                    best_move = (row, col)
+            return min_eval, best_move
+                    
         
     def eval(self, mainboard):
         if self.level == 0:
